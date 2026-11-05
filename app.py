@@ -102,10 +102,10 @@ except Exception:
 # Confira os nomes atuais dos modelos em:
 # https://ai.google.dev/gemini-api/docs/models
 MODELOS = {
-    "Gemini 3.8 Flash (recomendado)": "gemini-3.8-flash",
-    "Gemini 3.1 Pro (mais preciso)": "gemini-3.1-pro-preview",
+    "Gemini 3.5 Flash-Lite (mais usos grátis)": "gemini-3.5-flash-lite",
+    "Gemini 3.8 Flash (mais capaz, poucos usos grátis)": "gemini-3.8-flash",
+    "Gemini 3.1 Pro (pode exigir plano pago)": "gemini-3.1-pro-preview",
 }
-
 INSTRUCAO_TUTOR = (
     "Você é um tutor paciente para estudantes. Responda em português do Brasil, "
     "com linguagem clara e exemplos do dia a dia. Explique passo a passo quando o "
