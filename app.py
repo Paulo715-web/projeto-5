@@ -38,31 +38,87 @@ h1, h2, h3 { font-family: 'Bricolage Grotesque', sans-serif !important; letter-s
 [data-testid="stAppDeployButton"], .stAppDeployButton, footer { display: none !important; }
 [data-testid="stHeader"] { background: transparent; }
 
-[data-testid="stMain"] .block-container { max-width: 920px; padding-top: 2rem; padding-bottom: 4rem; }
+[data-testid="stMain"] .block-container { max-width: 1040px; padding-top: 1.6rem; padding-bottom: 4rem; }
+[data-testid="stMain"] h3 { font-size: 1.35rem; margin-top: .2rem; }
+
+/* Barra lateral */
+[data-testid="stSidebar"] { background: #111720; border-right: 1px solid #1E2733; }
+[data-testid="stSidebar"] h2 { font-size: 1.15rem; }
 
 /* Cabeçalho */
-.hero { margin-bottom: 1.2rem; }
-.hero h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .4rem 0; padding: 0; }
-.hero .bolt { color: #FFB020; }
-.hero p { color: #9AA7B8; font-size: 1.05rem; margin: 0; }
-
-/* Abas */
-.stTabs [data-baseweb="tab-list"] { gap: 1.6rem; border-bottom: 1px solid #232C3A; }
-.stTabs [data-baseweb="tab"] { font-weight: 500; padding: .6rem 0; }
-.stTabs [aria-selected="true"] { color: #FFB020; }
-
-/* Mensagens do chat */
-.stChatMessage {
-    background: #161C26;
+.hero {
+    background: #131923;
     border: 1px solid #232C3A;
+    border-left: 4px solid #FFB020;
+    border-radius: 18px;
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 1.4rem;
+}
+.hero-top { display: flex; align-items: center; gap: 1rem; }
+.bolt-badge {
+    flex: 0 0 auto;
+    width: 3rem; height: 3rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    background: rgba(255, 176, 32, .14);
     border-radius: 14px;
-    padding: 1rem 1.2rem;
-    margin-bottom: .6rem;
+}
+.hero h1 { font-size: 2rem; line-height: 1.15; margin: 0 0 .25rem 0; padding: 0; }
+.hero p { color: #9AA7B8; font-size: 1.02rem; margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.chips span {
+    font-size: .82rem; color: #9AA7B8;
+    border: 1px solid #2A3547; border-radius: 999px;
+    padding: .2rem .7rem;
 }
 
-/* Campo de digitação */
+/* Abas em formato de pílula */
+.stTabs [data-baseweb="tab-list"] {
+    gap: .4rem;
+    background: #131923;
+    border: 1px solid #232C3A;
+    border-radius: 14px;
+    padding: .35rem;
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
+}
+.stTabs [data-baseweb="tab"] {
+    height: auto;
+    padding: .5rem 1rem;
+    border-radius: 10px;
+    font-weight: 500;
+    color: #9AA7B8;
+}
+.stTabs [data-baseweb="tab"]:hover { color: #E6EAF0; background: rgba(255, 255, 255, .04); }
+.stTabs [aria-selected="true"] { background: rgba(255, 176, 32, .14); color: #FFB020; }
+.stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] { display: none; }
+.stTabs [data-baseweb="tab-panel"] { padding-top: 1.4rem; }
+
+/* Mensagens do chat: a sua em tom âmbar, a da IA em grafite */
+.stChatMessage {
+    background: #141A24;
+    border: 1px solid #232C3A;
+    border-radius: 16px;
+    padding: 1rem 1.2rem;
+    margin-bottom: .7rem;
+}
+.stChatMessage:has([data-testid="stChatMessageAvatarUser"]) {
+    background: rgba(255, 176, 32, .07);
+    border-color: rgba(255, 176, 32, .28);
+}
+
+/* Campos de texto */
+[data-baseweb="input"], [data-baseweb="textarea"], [data-baseweb="select"] > div { border-radius: 12px !important; }
+[data-baseweb="input"]:focus-within, [data-baseweb="textarea"]:focus-within { border-color: #FFB020 !important; }
 [data-testid="stChatInput"] { border-radius: 14px; }
 [data-testid="stChatInput"]:focus-within { border-color: #FFB020; }
+
+/* Envio de arquivos, alertas e seções recolhíveis */
+[data-testid="stFileUploaderDropzone"] { border: 1.5px dashed #2A3547; border-radius: 14px; background: #131923; }
+[data-testid="stFileUploaderDropzone"]:hover { border-color: #FFB020; }
+[data-testid="stAlert"] { border-radius: 12px; }
+[data-testid="stExpander"] details { border-radius: 12px; border-color: #232C3A; background: #131923; }
 
 /* Botões */
 [data-testid="stMain"] .stButton > button {
@@ -74,17 +130,30 @@ h1, h2, h3 { font-family: 'Bricolage Grotesque', sans-serif !important; letter-s
     white-space: normal;
     text-align: left;
     padding: 0.8rem 1rem;
-    transition: border-color .15s, color .15s;
+    transition: border-color .15s, color .15s, transform .15s;
 }
 [data-testid="stMain"] .stButton > button p { white-space: normal; overflow: visible; text-overflow: clip; }
-[data-testid="stMain"] .stButton > button:hover { border-color: #FFB020; color: #FFB020; }
+[data-testid="stMain"] .stButton > button:hover { border-color: #FFB020; color: #FFB020; transform: translateY(-1px); }
 [data-testid="stMain"] .stButton > button[kind="primary"] {
-    min-height: 2.6rem; background: #FFB020; color: #14110A; border: none; font-weight: 600;
+    min-height: 2.7rem; background: #FFB020; color: #14110A; border: none; font-weight: 600;
+    box-shadow: 0 4px 14px rgba(255, 176, 32, .22);
 }
 [data-testid="stMain"] .stButton > button[kind="primary"]:hover { background: #FFC24D; color: #14110A; }
 
 /* Métricas */
 [data-testid="stMetric"] { background: #161C26; border: 1px solid #232C3A; border-radius: 14px; padding: 1rem 1.2rem; }
+
+/* Barra de rolagem discreta */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #2A3547; border-radius: 10px; }
+
+/* Celular */
+@media (max-width: 640px) {
+    [data-testid="stMain"] .block-container { padding-left: 1rem; padding-right: 1rem; }
+    .hero { padding: 1.1rem; }
+    .hero h1 { font-size: 1.45rem; }
+    .bolt-badge { display: none; }
+}
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -269,6 +338,23 @@ def formatar_numero(n):
 if "mensagens" not in st.session_state:
     st.session_state.mensagens = novo_chat()
 
+# Chaves que entram no arquivo do projeto e o tipo esperado de cada uma
+PROJETO_CHAVES = {
+    "mensagens": list,
+    "redacao": dict,
+    "analise": dict,
+    "deteccao": str,
+    "humanizado": str,
+    "mapa": dict,
+    "calc": dict,
+}
+
+# Pergunta enviada pela extensão do navegador (link com ?q=texto)
+pergunta_extensao = st.query_params.get("q")
+if pergunta_extensao and pergunta_extensao.strip():
+    st.session_state.mensagens.append({"role": "user", "content": pergunta_extensao.strip()[:2000]})
+    st.query_params.clear()
+
 with st.sidebar:
     st.header("Configurações da IA")
     modelo_selecionado = st.selectbox("Modelo", list(MODELOS.keys()))
@@ -291,6 +377,32 @@ with st.sidebar:
             use_container_width=True,
         )
 
+    with st.expander("📁 Projeto (salvar e abrir)"):
+        nome_proj = st.text_input("Nome do projeto", value="meu-projeto", key="nome_proj")
+        arquivo_proj = re.sub(r"[^a-z0-9-]+", "-", nome_proj.lower()).strip("-") or "projeto"
+        dados_proj = {k: st.session_state[k] for k in PROJETO_CHAVES if k in st.session_state}
+        st.download_button(
+            "Salvar projeto (.json)",
+            data=json.dumps(dados_proj, ensure_ascii=False, indent=2),
+            file_name=f"{arquivo_proj}.json",
+            mime="application/json",
+            use_container_width=True,
+        )
+        enviado = st.file_uploader("Abrir projeto salvo", type=["json"], key="up_proj")
+        if enviado is not None and st.button("Carregar projeto", use_container_width=True):
+            try:
+                lido = json.loads(enviado.getvalue().decode("utf-8"))
+                if not isinstance(lido, dict):
+                    raise ValueError("formato")
+                for chave, tipo in PROJETO_CHAVES.items():
+                    if chave in lido and isinstance(lido[chave], tipo):
+                        st.session_state[chave] = lido[chave]
+                if not st.session_state.get("mensagens"):
+                    st.session_state.mensagens = novo_chat()
+                st.rerun()
+            except (ValueError, UnicodeDecodeError):
+                st.error("Esse arquivo não parece ser um projeto desta Central.")
+
     st.divider()
     if api_conectada:
         st.success("Conectado à API do Gemini")
@@ -306,8 +418,14 @@ nome_modelo = MODELOS[modelo_selecionado]
 st.markdown(
     """
 <div class="hero">
-  <h1><span class="bolt">⚡</span> Central Inteligente para Estudantes</h1>
-  <p>Tire dúvidas, resolva contas e analise materiais de estudo com ajuda da IA.</p>
+  <div class="hero-top">
+    <div class="bolt-badge">⚡</div>
+    <div>
+      <h1>Central Inteligente para Estudantes</h1>
+      <p>Tire dúvidas, resolva contas e analise materiais de estudo com ajuda da IA.</p>
+    </div>
+  </div>
+  <div class="chips"><span>💬 Tutor</span><span>🧮 Cálculos</span><span>🔍 Análise de arquivos</span><span>✍️ Redação</span><span>🧠 Mapas mentais</span></div>
 </div>
 """,
     unsafe_allow_html=True,
