@@ -106,6 +106,7 @@ MODELOS = {
     "Gemini 3.8 Flash (mais capaz, poucos usos grátis)": "gemini-3.8-flash",
     "Gemini 3.1 Pro (pode exigir plano pago)": "gemini-3.1-pro-preview",
 }
+
 INSTRUCAO_TUTOR = (
     "Você é um tutor paciente para estudantes. Responda em português do Brasil, "
     "com linguagem clara e exemplos do dia a dia. Explique passo a passo quando o "
@@ -120,6 +121,28 @@ INSTRUCAO_REDACAO = (
     "sem listas, sem títulos (a menos que peçam), sem emojis. "
     "Entregue apenas o texto da redação, sem comentários antes ou depois. "
     "Se o aluno enviar ideias ou um rascunho, aproveite-os e mantenha o jeito dele de falar."
+)
+
+INSTRUCAO_DETECTOR = (
+    "Você analisa textos em português e estima se parecem escritos por IA ou por uma pessoa. "
+    "Seja honesto sobre a incerteza: nenhum método é confiável, e textos formais, escolares ou de quem "
+    "escreve em segunda língua podem parecer IA mesmo sendo humanos. Responda em português do Brasil, "
+    "em Markdown, neste formato: "
+    "**Veredito:** (Provavelmente humano, Inconclusivo ou Provavelmente IA) com uma frase de justificativa; "
+    "**Sinais de texto gerado por IA:** lista curta, citando trechos curtos do próprio texto (até 6 palavras cada); "
+    "**Sinais de escrita humana:** lista curta; "
+    "**Confiança:** baixa, média ou alta; "
+    "**Aviso:** uma linha lembrando que isso é uma estimativa e não uma prova. "
+    "Nunca invente trechos que não estejam no texto."
+)
+
+INSTRUCAO_HUMANIZAR = (
+    "Você revisa textos de estudantes para que soem naturais e com voz própria. Reescreva o texto recebido "
+    "em português do Brasil, mantendo o sentido, os argumentos e os fatos (não invente dados, citações ou fontes). "
+    "Varie o tamanho das frases, troque expressões batidas por palavras do dia a dia do nível indicado, "
+    "reduza repetições e excesso de conectivos e deixe o ritmo mais natural. Mantenha aproximadamente o mesmo tamanho. "
+    "Se houver um exemplo da escrita do aluno, aproxime o estilo dele. "
+    "Entregue apenas o texto reescrito, sem comentários."
 )
 
 SAUDACAO = "Olá! Sou o seu assistente de estudos. Em que matéria posso ajudar hoje?"
@@ -186,7 +209,10 @@ def erro_amigavel(e):
     if "api key" in msg or "api_key" in msg or "permission" in msg or "403" in msg:
         return "A chave da API parece inválida ou sem permissão. Confira o GEMINI_API_KEY."
     if "429" in msg or "quota" in msg or "exhausted" in msg:
-        return "O limite de uso da API foi atingido. Aguarde um minuto e tente de novo."
+        return (
+            "O limite gratuito da API foi atingido. Espere um minuto e, se continuar, "
+            "troque para o Gemini 3.5 Flash-Lite na barra lateral (tem mais usos grátis por dia)."
+        )
     if "404" in msg or "not found" in msg:
         return "Esse modelo não está disponível. Troque o modelo na barra lateral."
     return "Não consegui falar com o Gemini agora. Tente novamente em instantes."
@@ -432,91 +458,205 @@ with tab3:
             st.divider()
             st.markdown(analise["texto"])
 
+def executar_stream(chave, pedido, instrucao, temp, msg_carregando):
+    """Gera um texto com efeito de digitação e guarda o resultado no session_state."""
+    st.divider()
+    pensando = st.empty()
+    pensando.caption(msg_carregando)
+    try:
+        texto = st.write_stream(
+            stream_resposta(
+                [{"role": "user", "parts": [pedido]}],
+                nome_modelo,
+                temp,
+                ao_iniciar=pensando.empty,
+                instrucao=instrucao,
+            )
+        )
+        if texto and texto.strip():
+            st.session_state[chave] = texto
+        else:
+            pensando.empty()
+            st.info("Não consegui gerar o resultado. Tente de novo.")
+    except Exception as e:
+        pensando.empty()
+        st.error(erro_amigavel(e))
+        st.caption(f"Detalhe técnico: {str(e)[:200]}")
+
+
 # =====================================================================
 # ABA 4: REDAÇÃO
 # =====================================================================
 with tab4:
-    st.subheader("Escrever redação")
-    st.caption("Texto com jeito de gente: frases variadas, exemplos reais e sem aquelas expressões batidas.")
-
-    tema = st.text_input("Tema da redação", placeholder="Ex.: Os impactos das redes sociais na saúde mental dos jovens")
-
-    c1, c2 = st.columns(2)
-    with c1:
-        tipo = st.selectbox(
-            "Tipo de texto",
-            [
-                "Dissertativo-argumentativo (modelo ENEM)",
-                "Opinião / artigo",
-                "Narrativa",
-                "Carta",
-                "Resumo ou resenha",
-            ],
-        )
-        nivel = st.selectbox("Nível", ["Ensino fundamental", "Ensino médio", "Ensino superior"], index=1)
-    with c2:
-        tom = st.selectbox("Tom", ["Natural", "Formal", "Descontraído"])
-        tamanho = st.slider("Tamanho aproximado (palavras)", 100, 800, 300, 50)
-
-    ideias = st.text_area(
-        "Suas ideias ou rascunho (opcional)",
-        placeholder="Cole aqui pontos que você quer usar ou um rascunho. A IA aproveita e mantém o seu jeito de escrever.",
-        height=120,
+    sub_escrever, sub_detectar, sub_humanizar = st.tabs(
+        ["✍️ Escrever", "🕵️ Detectar IA", "🧑 Humanizar texto"]
     )
 
-    if st.button("Escrever redação", type="primary"):
-        if not tema.strip():
-            st.warning("Escreva o tema da redação primeiro.")
-        elif not api_conectada:
-            st.warning("Adicione a chave GEMINI_API_KEY nos Secrets para usar este recurso.")
-        else:
-            pedido = (
-                f"Escreva um texto do tipo: {tipo}.\n"
-                f"Tema: {tema.strip()}\n"
-                f"Nível: {nivel}. Tom: {tom}. Tamanho: cerca de {tamanho} palavras."
-            )
-            if tipo.startswith("Dissertativo"):
-                pedido += (
-                    "\nEstrutura: introdução com tese, dois parágrafos de desenvolvimento com argumentos e "
-                    "repertório, e conclusão com proposta de intervenção (agente, ação, meio, finalidade e detalhamento)."
-                )
-            if ideias.strip():
-                pedido += f"\n\nIdeias/rascunho do aluno para aproveitar:\n{ideias.strip()}"
+    with sub_escrever:
+        st.subheader("Escrever redação")
+        st.caption("Texto com jeito de gente: frases variadas, exemplos reais e sem aquelas expressões batidas.")
 
-            st.divider()
-            pensando = st.empty()
-            pensando.caption("Escrevendo…")
-            try:
-                texto = st.write_stream(
-                    stream_resposta(
-                        [{"role": "user", "parts": [pedido]}],
-                        nome_modelo,
-                        max(temperatura, 0.7),
-                        ao_iniciar=pensando.empty,
-                        instrucao=INSTRUCAO_REDACAO,
-                    )
+        tema = st.text_input("Tema da redação", placeholder="Ex.: Os impactos das redes sociais na saúde mental dos jovens")
+
+        c1, c2 = st.columns(2)
+        with c1:
+            tipo = st.selectbox(
+                "Tipo de texto",
+                [
+                    "Dissertativo-argumentativo (modelo ENEM)",
+                    "Opinião / artigo",
+                    "Narrativa",
+                    "Carta",
+                    "Resumo ou resenha",
+                ],
+            )
+            nivel = st.selectbox("Nível", ["Ensino fundamental", "Ensino médio", "Ensino superior"], index=1)
+        with c2:
+            tom = st.selectbox("Tom", ["Natural", "Formal", "Descontraído"])
+            tamanho = st.slider("Tamanho aproximado (palavras)", 100, 800, 300, 50)
+
+        ideias = st.text_area(
+            "Suas ideias ou rascunho (opcional)",
+            placeholder="Cole aqui pontos que você quer usar ou um rascunho. A IA aproveita e mantém o seu jeito de escrever.",
+            height=120,
+        )
+
+        if st.button("Escrever redação", type="primary"):
+            if not tema.strip():
+                st.warning("Escreva o tema da redação primeiro.")
+            elif not api_conectada:
+                st.warning("Adicione a chave GEMINI_API_KEY nos Secrets para usar este recurso.")
+            else:
+                pedido = (
+                    f"Escreva um texto do tipo: {tipo}.\n"
+                    f"Tema: {tema.strip()}\n"
+                    f"Nível: {nivel}. Tom: {tom}. Tamanho: cerca de {tamanho} palavras."
                 )
-                if texto and texto.strip():
-                    st.session_state["redacao"] = {"tema": tema.strip(), "texto": texto}
-                else:
+                if tipo.startswith("Dissertativo"):
+                    pedido += (
+                        "\nEstrutura: introdução com tese, dois parágrafos de desenvolvimento com argumentos e "
+                        "repertório, e conclusão com proposta de intervenção (agente, ação, meio, finalidade e detalhamento)."
+                    )
+                if ideias.strip():
+                    pedido += f"\n\nIdeias/rascunho do aluno para aproveitar:\n{ideias.strip()}"
+
+                st.divider()
+                pensando = st.empty()
+                pensando.caption("Escrevendo…")
+                try:
+                    texto = st.write_stream(
+                        stream_resposta(
+                            [{"role": "user", "parts": [pedido]}],
+                            nome_modelo,
+                            max(temperatura, 0.7),
+                            ao_iniciar=pensando.empty,
+                            instrucao=INSTRUCAO_REDACAO,
+                        )
+                    )
+                    if texto and texto.strip():
+                        st.session_state["redacao"] = {"tema": tema.strip(), "texto": texto}
+                    else:
+                        pensando.empty()
+                        st.info("Não consegui gerar o texto. Tente mudar o tema ou reformular.")
+                except Exception as e:
                     pensando.empty()
-                    st.info("Não consegui gerar o texto. Tente mudar o tema ou reformular.")
-            except Exception as e:
-                pensando.empty()
-                st.error(erro_amigavel(e))
-                st.caption(f"Detalhe técnico: {str(e)[:200]}")
-    else:
+                    st.error(erro_amigavel(e))
+                    st.caption(f"Detalhe técnico: {str(e)[:200]}")
+        else:
+            salva = st.session_state.get("redacao")
+            if salva:
+                st.divider()
+                st.markdown(salva["texto"])
+
         salva = st.session_state.get("redacao")
         if salva:
-            st.divider()
-            st.markdown(salva["texto"])
+            st.caption(f"{len(salva['texto'].split())} palavras")
+            st.download_button(
+                "Baixar redação",
+                data=salva["texto"],
+                file_name="redacao.txt",
+                mime="text/plain",
+            )
 
-    salva = st.session_state.get("redacao")
-    if salva:
-        st.caption(f"{len(salva['texto'].split())} palavras")
-        st.download_button(
-            "Baixar redação",
-            data=salva["texto"],
-            file_name="redacao.txt",
-            mime="text/plain",
+    # -----------------------------------------------------------------
+    # Detectar se o texto parece escrito por IA
+    # -----------------------------------------------------------------
+    with sub_detectar:
+        st.subheader("Esse texto parece escrito por IA?")
+        st.caption(
+            "É uma estimativa baseada em padrões do texto. Não é prova e pode errar, "
+            "principalmente em textos formais ou de quem escreve em outra língua."
         )
+        texto_det = st.text_area("Cole o texto", height=220, key="texto_det")
+
+        if st.button("Analisar texto", type="primary", key="btn_det"):
+            if len(texto_det.split()) < 40:
+                st.warning("Cole um texto com pelo menos 40 palavras para a análise fazer sentido.")
+            elif not api_conectada:
+                st.warning("Adicione a chave GEMINI_API_KEY nos Secrets para usar este recurso.")
+            else:
+                executar_stream(
+                    "deteccao",
+                    f"Analise o texto abaixo:\n\n---\n{texto_det.strip()}\n---",
+                    INSTRUCAO_DETECTOR,
+                    temperatura,
+                    "Analisando…",
+                )
+        elif st.session_state.get("deteccao"):
+            st.divider()
+            st.markdown(st.session_state["deteccao"])
+
+    # -----------------------------------------------------------------
+    # Humanizar: deixar o texto mais natural, com a voz do aluno
+    # -----------------------------------------------------------------
+    with sub_humanizar:
+        st.subheader("Deixar o texto mais natural")
+        st.caption(
+            "Reescreve mantendo as suas ideias, com frases mais variadas e menos expressões batidas. "
+            "Leia o resultado e ajuste com as suas palavras. Isso não garante que um detector vá aprovar o texto, "
+            "e vale conferir as regras da sua escola sobre uso de IA."
+        )
+        texto_hum = st.text_area("Cole o texto que quer revisar", height=220, key="texto_hum")
+        nivel_hum = st.selectbox(
+            "Nível de linguagem",
+            ["Ensino fundamental", "Ensino médio", "Ensino superior"],
+            index=1,
+            key="nivel_hum",
+        )
+        amostra = st.text_area(
+            "Um trecho que você mesmo escreveu (opcional)",
+            placeholder="Se colar um texto seu, a IA tenta se aproximar do seu jeito de escrever.",
+            height=100,
+            key="amostra_hum",
+        )
+
+        if st.button("Humanizar texto", type="primary", key="btn_hum"):
+            if len(texto_hum.split()) < 30:
+                st.warning("Cole um texto com pelo menos 30 palavras.")
+            elif not api_conectada:
+                st.warning("Adicione a chave GEMINI_API_KEY nos Secrets para usar este recurso.")
+            else:
+                pedido_hum = f"Nível de linguagem: {nivel_hum}.\n\nTexto para reescrever:\n{texto_hum.strip()}"
+                if amostra.strip():
+                    pedido_hum += f"\n\nExemplo da escrita do aluno (imite o estilo):\n{amostra.strip()}"
+                executar_stream(
+                    "humanizado",
+                    pedido_hum,
+                    INSTRUCAO_HUMANIZAR,
+                    max(temperatura, 0.7),
+                    "Reescrevendo…",
+                )
+        elif st.session_state.get("humanizado"):
+            st.divider()
+            st.markdown(st.session_state["humanizado"])
+
+        resultado_hum = st.session_state.get("humanizado")
+        if resultado_hum:
+            st.caption(f"{len(resultado_hum.split())} palavras")
+            st.download_button(
+                "Baixar texto",
+                data=resultado_hum,
+                file_name="texto-humanizado.txt",
+                mime="text/plain",
+                key="dl_hum",
+            )
